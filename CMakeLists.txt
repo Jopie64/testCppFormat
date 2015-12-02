@@ -3,6 +3,10 @@ project(TestCppFormat)
 
 SET (CMAKE_MFC_FLAG 2)
 
+if (CMAKE_COMPILER_IS_GNUCXX )
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+
 set(FMT_TEST off)
 set(FMT_INSTALL off)
 set(FMT_DOC off)

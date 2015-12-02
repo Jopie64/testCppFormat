@@ -1,12 +1,29 @@
+#include <string>
+#include <cstring>
+#ifdef WIN32
 #include <afx.h>
+#else
+typedef std::string CStringA;
+#endif
 #include <iostream>
-#include "P:\cppformat\format.h"
+#include "../cppformat/format.h"
 
 using namespace std;
 
-#if _MSC_VER >= 1700
+#if defined __GNUC__ || defined _MSC_VER && _MSC_VER >= 1700
 #define J_HAS_EMPLACE_BACK
 #define J_HAS_RVALUE_REFERENCES
+#endif
+
+#ifdef __GNUC__
+#define GCC_VERSION (__GNUC__ * 10000 \
+                               + __GNUC_MINOR__ * 100 \
+                               + __GNUC_PATCHLEVEL__)
+#define COMPILER_VERSION GCC_VERSION
+#define J_EXPLICIT_TEMPLATE template
+#elif defined _MSC_VER
+#define COMPILER_VERSION _MSC_VER
+#define J_EXPLICIT_TEMPLATE
 #endif
 
 #include <vector>
@@ -85,7 +102,7 @@ class OldFormatter : public internal::ValueCollector<Char, OldFormatter<Char> >
 public:
 	OldFormatter(CStringRef P_Format):m_Format(P_Format), m_bFormatted(false){}
 #ifdef J_HAS_RVALUE_REFERENCES
-	OldFormatter(OldFormatter&& P):m_Writer(P.m_Writer), m_bFormatted(P.m_bFormatted), m_Format(P_Format){}
+	OldFormatter(OldFormatter&& P):m_Writer(std::move(P.m_Writer)), m_bFormatted(P.m_bFormatted), m_Format(P.m_Format){}
 #endif
 
 	~OldFormatter()
@@ -95,7 +112,7 @@ public:
 	const Char* c_str()
 	{
 		if (!m_bFormatted)
-			m_Writer.write(m_Format, argList());
+			m_Writer.write(m_Format, this->J_EXPLICIT_TEMPLATE argList());
 		m_bFormatted = true;
 		return m_Writer.c_str();
 	}
@@ -128,7 +145,7 @@ const basic_string<Char> str(OldFormatter<Char>& P)
 
 string G_csLastFormatError;
 
-void testOnFormatError(fmt::FormatError& e)
+void testOnFormatError(const fmt::FormatError& e)
 {
 	G_csLastFormatError += e.what();
 	G_csLastFormatError += "\n";
@@ -137,21 +154,21 @@ void testOnFormatError(fmt::FormatError& e)
 int main(int argc, char* argv[])
 {
 	cout << "hello world!" << endl;
-//	cout << fmt::format("Hello {} {}","world!", _MSC_VER) << endl;
+//	cout << fmt::format("Hello {} {}","world!", COMPILER_VERSION) << endl;
 
 /*	{
 		fmt::internal::ValueCollector<char> W_Coll;
-		W_Coll << "world!" << _MSC_VER;
+		W_Coll << "world!" << COMPILER_VERSION;
 
 		cout << fmt::format("Hello {} {}", W_Coll.argList()) << endl;
 	}
 */
-	char* bla = "bla";
+	const char* bla = "bla";
 	int blo = 3;
 	// MAX_PACKED_ARGS - 1 args
 	{
 		cout << c_str(fmt::OldFormat("Hello {} {} {} {} - {} {} {} {} - {} {} {} {} - {} {} {}")
-				<< "world!" << _MSC_VER
+				<< "world!" << COMPILER_VERSION
 				<< bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << string(bla) << blo << CStringA(bla))
 			<< endl;
 	}
@@ -159,7 +176,7 @@ int main(int argc, char* argv[])
 	// MAX_PACKED_ARGS args
 	{
 		cout << c_str(fmt::OldFormat("Hello {} {} {} {} - {} {} {} {} - {} {} {} {} - {} {} {} {}")
-				<< "world!" << _MSC_VER
+				<< "world!" << COMPILER_VERSION
 				<< bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << string(bla) << blo << CStringA(bla) << blo)
 			<< endl;
 	}
@@ -167,7 +184,7 @@ int main(int argc, char* argv[])
 	// MAX_PACKED_ARGS + 1 args
 	{
 		cout << c_str(fmt::OldFormat("Hello {} {} {} {} - {} {} {} {} - {} {} {} {} - {} {} {} {} - {}")
-				<< "world!" << _MSC_VER
+				<< "world!" << COMPILER_VERSION
 				<< bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << string(bla) << blo << CStringA(bla) << blo << bla)
 			<< endl;
 	}
