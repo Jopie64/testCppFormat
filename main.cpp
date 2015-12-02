@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
 			<< endl;
 	}
 
-	fmt::setFormatErrorCallback(testOnFormatError);
+	fmt::FormatError::setCallback(testOnFormatError);
 	cout << c_str(fmt::OldFormat("{} {}") << 1) << endl;
 	cout << "Format errors: " << G_csLastFormatError << endl;
 	G_csLastFormatError.clear();
