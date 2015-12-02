@@ -1,3 +1,4 @@
+#include <afx.h>
 #include <iostream>
 #include "P:\cppformat\format.h"
 
@@ -5,6 +6,7 @@ using namespace std;
 
 #if _MSC_VER >= 1700
 #define J_HAS_EMPLACE_BACK
+#define J_HAS_RVALUE_REFERENCES
 #endif
 
 #include <vector>
@@ -13,14 +15,14 @@ namespace fmt
 namespace internal
 {
 
-template<typename Char>
+template<typename Char, typename Derived>
 class ValueCollector
 {
 public:
 	ValueCollector():types(0) {}
 
 	template<class T>
-	ValueCollector& operator<<(const T& P)
+	Derived& operator<<(const T& P)
 	{
 		size_t curValIx = getNbVal();
 		Arg a = MakeValue<Char>(P);
@@ -44,7 +46,7 @@ public:
 		}
 		if (curValIx >= ArgList::MAX_PACKED_ARGS)
 			args.push_back(a);
-		return *this;
+		return static_cast<Derived&>(*this);
 	}
 
 	ArgList argList()
@@ -78,10 +80,13 @@ protected:
 }
 
 template<class Char>
-class OldFormatter : public internal::ValueCollector<Char>
+class OldFormatter : public internal::ValueCollector<Char, OldFormatter<Char> >
 {
 public:
 	OldFormatter(CStringRef P_Format):m_Format(P_Format), m_bFormatted(false){}
+#ifdef J_HAS_RVALUE_REFERENCES
+	OldFormatter(OldFormatter&& P):m_Writer(P.m_Writer), m_bFormatted(P.m_bFormatted), m_Format(P_Format){}
+#endif
 
 	~OldFormatter()
 	{
@@ -101,6 +106,24 @@ protected:
 	CStringRef m_Format;
 };
 
+template <class Char>
+OldFormatter<Char> OldFormat(const Char* P_Format)
+{
+	return OldFormatter<Char>(P_Format);
+}
+
+template <class Char>
+const Char* c_str(OldFormatter<Char>& P)
+{
+	return P.c_str();
+}
+
+template <class Char>
+const basic_string<Char> str(OldFormatter<Char>& P)
+{
+	return P.c_str();
+}
+
 } //namespace fmt::internal
 
 int main(int argc, char* argv[])
@@ -108,41 +131,39 @@ int main(int argc, char* argv[])
 	cout << "hello world!" << endl;
 //	cout << fmt::format("Hello {} {}","world!", _MSC_VER) << endl;
 
-	{
+/*	{
 		fmt::internal::ValueCollector<char> W_Coll;
 		W_Coll << "world!" << _MSC_VER;
 
 		cout << fmt::format("Hello {} {}", W_Coll.argList()) << endl;
 	}
-
+*/
 	char* bla = "bla";
 	int blo = 3;
 	// MAX_PACKED_ARGS - 1 args
 	{
-		fmt::internal::ValueCollector<char> W_Coll;
-		W_Coll << "world!" << _MSC_VER;
-		W_Coll << bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << bla;
-
-		cout << fmt::format("Hello {} {} {} {} - {} {} {} {} - {} {} {} {} - {} {} {}", W_Coll.argList()) << endl;
+		cout << c_str(fmt::OldFormat("Hello {} {} {} {} - {} {} {} {} - {} {} {} {} - {} {} {}")
+				<< "world!" << _MSC_VER
+				<< bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << string(bla) << blo << CStringA(bla))
+			<< endl;
 	}
 
 	// MAX_PACKED_ARGS args
 	{
-		fmt::internal::ValueCollector<char> W_Coll;
-		W_Coll << "world!" << _MSC_VER;
-		W_Coll << bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << bla << blo;
-
-		cout << fmt::format("Hello {} {} {} {} - {} {} {} {} - {} {} {} {} - {} {} {} {}", W_Coll.argList()) << endl;
+		cout << c_str(fmt::OldFormat("Hello {} {} {} {} - {} {} {} {} - {} {} {} {} - {} {} {} {}")
+				<< "world!" << _MSC_VER
+				<< bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << string(bla) << blo << CStringA(bla) << blo)
+			<< endl;
 	}
 
 	// MAX_PACKED_ARGS + 1 args
 	{
-		fmt::internal::ValueCollector<char> W_Coll;
-		W_Coll << "world!" << _MSC_VER;
-		W_Coll << bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << bla;
-
-		cout << fmt::format("Hello {} {} {} {} - {} {} {} {} - {} {} {} {} - {} {} {} {} - {}", W_Coll.argList()) << endl;
+		cout << c_str(fmt::OldFormat("Hello {} {} {} {} - {} {} {} {} - {} {} {} {} - {} {} {} {} - {}")
+				<< "world!" << _MSC_VER
+				<< bla << blo << bla << blo << bla << blo << bla << blo << bla << blo << string(bla) << blo << CStringA(bla) << blo << bla)
+			<< endl;
 	}
+
 	char c;
 	cin >> c;
 	return 0;
