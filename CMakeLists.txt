@@ -6,7 +6,7 @@ SET (CMAKE_MFC_FLAG 2)
 set(FMT_TEST off)
 set(FMT_INSTALL off)
 set(FMT_DOC off)
-add_subdirectory(P:/cppformat cppformat)
+add_subdirectory(../cppformat cppformat)
 
 ADD_DEFINITIONS(-D_AFXDLL -D_CRT_SECURE_NO_WARNINGS)
 
