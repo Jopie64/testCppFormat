@@ -3,6 +3,10 @@
 
 using namespace std;
 
+#if _MSC_VER >= 1700
+#define J_HAS_EMPLACE_BACK
+#endif
+
 #include <vector>
 namespace fmt
 {
@@ -35,11 +39,11 @@ public:
 				Arg arg;
 				memcpy(&arg,&values[i],sizeof(values[i]));
 				arg.type = Arg::Type((types & (0xfll << i * 4)) >> i * 4);
-				args.emplace_back(arg);
+				args.push_back(arg);
 			}
 		}
 		if (curValIx >= ArgList::MAX_PACKED_ARGS)
-			args.emplace_back(a);
+			args.push_back(a);
 		return *this;
 	}
 
@@ -47,7 +51,11 @@ public:
 	{
 		if (!args.empty())
 		{
+#ifdef J_HAS_EMPLACE_BACK
 			args.emplace_back(); //Empty value
+#else
+			args.push_back(Arg()); //Empty value
+#endif
 			return ArgList(types, &args[0]);
 		}
 		return ArgList(types, values);
