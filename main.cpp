@@ -126,6 +126,14 @@ const basic_string<Char> str(OldFormatter<Char>& P)
 
 } //namespace fmt::internal
 
+string G_csLastFormatError;
+
+void testOnFormatError(fmt::FormatError& e)
+{
+	G_csLastFormatError += e.what();
+	G_csLastFormatError += "\n";
+}
+
 int main(int argc, char* argv[])
 {
 	cout << "hello world!" << endl;
@@ -164,6 +172,13 @@ int main(int argc, char* argv[])
 			<< endl;
 	}
 
+	fmt::setFormatErrorCallback(testOnFormatError);
+	cout << c_str(fmt::OldFormat("{} {}") << 1) << endl;
+	cout << "Format errors: " << G_csLastFormatError << endl;
+	G_csLastFormatError.clear();
+	cout << c_str(fmt::OldFormat("{:s} {}") << 1 << 2 << 3) << endl;
+	cout << "Format errors: " << G_csLastFormatError << endl;
+	G_csLastFormatError.clear();
 	char c;
 	cin >> c;
 	return 0;
